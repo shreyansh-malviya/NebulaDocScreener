@@ -1,0 +1,42 @@
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+# ---- Env / secrets ----
+.env
+.env.*
+!.env.example
+# ---- Models / weights / data (large, downloaded) ----
+backend/models_cache/
+*.onnx
+*.pt
+*.pth
+*.caffemodel
+data/
+datasets/
+# ---- Storage / runtime ----
+*.log
+*.sqlite3
+gridfs_store/
+# ---- OS / IDE ----
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+# ---- Tests / coverage ----
+.pytest_cache/
+.coverage
+htmlcov/
+# NOTE: the rough/ (and Rough/) folder is intentionally NOT ignored here.
+# It is kept local-only via .git/info/exclude instead (never shared, never committed).

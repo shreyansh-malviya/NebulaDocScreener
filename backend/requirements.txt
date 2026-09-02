@@ -1,0 +1,17 @@
+# ---- Core backend spine (install these now; all pure-Python-friendly, Windows-OK) ----
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+pydantic==2.10.4
+python-multipart==0.0.20      # form/file uploads
+python-dotenv==1.0.1          # load .env
+
+# ---- Optional storage backend (import-guarded; app runs without a Mongo server) ----
+motor==3.6.0                  # async MongoDB driver (used only when STORAGE_BACKEND=mongo)
+
+# ---- Tests ----
+pytest==8.3.4
+httpx==0.28.1                 # FastAPI TestClient dependency
+
+# NOTE: heavy ML/CV deps (torch, insightface, paddleocr, fastmrz, opencv, photoholmes)
+# live in requirements-ml.txt and are added module-by-module in Week 2, each with a
+# CPU fallback so the spine never depends on them.

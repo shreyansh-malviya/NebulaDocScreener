@@ -1,0 +1,27 @@
+# ---- Heavy ML/CV dependencies (Week 2+). Installed module-by-module, each with a fallback. ----
+# Kept separate from requirements.txt so the reliable spine installs fast and clean.
+# Versions are indicative; pin exact working versions on the build machine (RTX 3050 / Python 3.10).
+
+# Module 1 — OCR / MRZ (image path)
+# opencv-python-headless
+# fastmrz                 # MRZ detect+read (ONNX seg + Tesseract OCR-B). Needs Tesseract binary.
+# paddleocr               # general/VIZ text (PP-OCRv4/v5)
+# paddlepaddle            # (or paddlepaddle-gpu) — pin a Windows-compatible version
+
+# Module 4 — Face + liveness (CPU-friendly)
+# insightface             # buffalo_l = SCRFD + ArcFace R50 (ONNX)
+# onnxruntime             # CPU inference (use onnxruntime-gpu if desired)
+# (Silent-Face MiniFASNet ONNX is downloaded to models_cache/)
+
+# Module 3 — Tamper forensics
+# photoholmes             # ELA/DQ/CAT-Net/TruFor/Noiseprint under one API (+ download_weights)
+# torch  torchvision      # CUDA build for the 3050 (cu121); TruFor/CAT-Net localizers
+# piexif  pillow          # metadata + ELA
+# (ExifTool binary optional, for richer metadata)
+
+# Module 5 — Chip PKI
+# cryptography            # CMS/X.509 for EF.SOD Passive-Auth (simulated CSCA->DSC)
+# asn1crypto  pymrtd      # (optional) real eMRTD parsing
+
+# LLM narrative (optional, online)
+# anthropic               # Claude Haiku narrative (if LLM_NARRATIVE=api)
