@@ -107,7 +107,10 @@ class MongoStore:
     def __init__(self, uri: str, db_name: str) -> None:
         from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorGridFSBucket
 
-        self._client = AsyncIOMotorClient(uri, serverSelectionTimeoutMS=3000)
+        # Generous timeouts: Render's free tier (0.1 CPU, cold container) + Atlas TLS/SRV
+        # handshake can take several seconds — a short timeout caused a silent memory fallback.
+        self._client = AsyncIOMotorClient(uri, serverSelectionTimeoutMS=20000,
+                                          connectTimeoutMS=20000, socketTimeoutMS=20000)
         self._db = self._client[db_name]
         self._sessions = self._db["sessions"]
         self._ledger = self._db["ledger"]
