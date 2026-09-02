@@ -80,7 +80,7 @@ async def screen(
     printed_dob: str = Form(""),
     printed_doc_number: str = Form(""),
     printed_expiry: str = Form(""),
-    chip_present: bool = Form(False),
+    chip_mode: str = Form("none"),
     document: Optional[UploadFile] = File(None),
 ):
     printed = {}
@@ -98,7 +98,8 @@ async def screen(
         printed=printed,
         document_bytes=doc_bytes,
         document_filename=document.filename if document is not None else None,
-        chip_present=chip_present,
+        chip_present=(chip_mode != "none"),
+        chip_mode=chip_mode,
     )
     ev = await state["screener"].screen(inputs)
     return JSONResponse(ev.model_dump(mode="json"))

@@ -48,7 +48,14 @@
           <option>DRIVING_LICENSE</option><option>PERMIT</option>
         </select>
       </label>
-      <label><input type="checkbox" id="chip_present"> Chip presented (NFC)</label><br>
+      <label>Chip (NFC eMRTD — real ECDSA/PKI simulation):
+        <select id="chip_mode">
+          <option value="none">none</option>
+          <option value="genuine">genuine chip (PA + AA pass)</option>
+          <option value="tampered">tampered chip data (PA fails)</option>
+          <option value="cloned">cloned chip (AA fails)</option>
+        </select>
+      </label><br>
       <label>Document image (optional — image OCR is Week&nbsp;2):
         <input type="file" id="document" accept="image/*"></label>
     </fieldset>
@@ -114,7 +121,7 @@ async function screen(ev) {
   fd.append('printed_dob', document.getElementById('printed_dob').value);
   fd.append('printed_doc_number', document.getElementById('printed_doc_number').value);
   fd.append('printed_expiry', document.getElementById('printed_expiry').value);
-  fd.append('chip_present', document.getElementById('chip_present').checked);
+  fd.append('chip_mode', document.getElementById('chip_mode').value);
   const f = document.getElementById('document').files[0];
   if (f) fd.append('document', f);
 
@@ -143,6 +150,10 @@ async function screen(ev) {
       + '  M3=' + (e.m3_tamper && e.m3_tamper.status)
       + '  M4=' + (e.m4_face && e.m4_face.status)
       + '  M5=' + (e.m5_chip && e.m5_chip.status),
+    'Chip auth: ' + (e.m5_chip && e.m5_chip.passive_auth && e.m5_chip.passive_auth.result
+        ? ('PA=' + e.m5_chip.passive_auth.result
+           + '  AA=' + (e.m5_chip.active_auth && e.m5_chip.active_auth.result))
+        : '(no chip)'),
     'Ledger seq: ' + (e.ledger && e.ledger.seq),
   ];
   document.getElementById('verdict-out').textContent = lines.join('\n');

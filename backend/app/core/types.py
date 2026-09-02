@@ -14,3 +14,4 @@ class ScreenInputs:
     document_filename: Optional[str] = None
     live_face_bytes: Optional[bytes] = None
     chip_present: bool = False
+    chip_mode: str = "none"              # none | genuine | tampered | cloned (Module 5 demo)

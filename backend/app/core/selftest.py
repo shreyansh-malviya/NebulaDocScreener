@@ -6,6 +6,7 @@ Exposed at GET /api/selftest and used as the boot readiness board (see build-pla
 """
 from __future__ import annotations
 
+from ..core import emrtd
 from ..core import mrz as mrzlib
 from ..core.fusion import fuse
 from ..core.ledger import Ledger
@@ -68,6 +69,18 @@ async def run_selftest() -> dict:
     ref, digest = await store.put_blob(b"nebula")
     blob = await store.get_blob(ref)
     add("storage blob roundtrip", blob == b"nebula", f"digest={digest[:12]}…")
+
+    # 8) chip PKI: genuine passes, tampered fails PA, cloned fails AA
+    g = emrtd.issue_chip(b"MRZ-DG1", b"FACE-DG2", "genuine")
+    add("chip PA genuine PASS", emrtd.passive_authentication(g)["result"] == "PASS")
+    add("chip AA genuine PASS", emrtd.active_authentication(g)["result"] == "PASS")
+    t = emrtd.issue_chip(b"MRZ-DG1", b"FACE-DG2", "tampered")
+    pat = emrtd.passive_authentication(t)
+    add("chip PA tampered FAIL", pat["result"] == "FAIL" and pat["dg_hashes"]["DG1"] is False, str(pat["dg_hashes"]))
+    cl = emrtd.issue_chip(b"MRZ-DG1", b"FACE-DG2", "cloned")
+    add("chip AA cloned FAIL",
+        emrtd.passive_authentication(cl)["result"] == "PASS"
+        and emrtd.active_authentication(cl)["result"] == "FAIL")
 
     passed = sum(1 for r in results if r["ok"])
     return {"passed": passed, "total": len(results), "all_ok": passed == len(results), "checks": results}
