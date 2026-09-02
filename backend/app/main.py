@@ -42,12 +42,14 @@ async def lifespan(app: FastAPI):
     state["store"] = store
     state["ledger"] = ledger
     state["screener"] = Screener(store, ledger)
-    # Seed a MOCK watchlist (real LOC / Interpol SLTD are BoI/CBI-side and restricted).
-    for entry in (
-        {"value": "L898902C3", "type": "doc_number", "reason": "MOCK: reported lost/stolen (Interpol SLTD demo)"},
-        {"value": "Z1234567", "type": "doc_number", "reason": "MOCK: lookout circular (demo)"},
-    ):
-        await store.watchlist_add(entry)
+    # Seed a MOCK watchlist ONCE — idempotent so a persistent (Mongo) store isn't duplicated
+    # on every restart. Real LOC / Interpol SLTD are BoI/CBI-side and restricted.
+    if not await store.watchlist_all():
+        for entry in (
+            {"value": "L898902C3", "type": "doc_number", "reason": "MOCK: reported lost/stolen (Interpol SLTD demo)"},
+            {"value": "Z1234567", "type": "doc_number", "reason": "MOCK: lookout circular (demo)"},
+        ):
+            await store.watchlist_add(entry)
     print(f"[startup] NEBULA screening API | storage backend = {store.backend} "
           f"| config = {settings.CONFIG_VERSION}")
     # Warm the face model in the background so the first screening isn't slow (non-blocking).
