@@ -76,6 +76,9 @@
     <span id="decision-out"></span>
   </div>
 
+  <h3>Tamper heatmaps (Module 3, if a document image was uploaded)</h3>
+  <div id="heatmaps"></div>
+
   <hr>
   <h2>3. Audit ledger (tamper-evident)</h2>
   <button onclick="viewLedger()">View ledger</button>
@@ -160,6 +163,21 @@ async function screen(ev) {
   document.getElementById('evidence-out').textContent = JSON.stringify(e, null, 2);
   document.getElementById('decision-bar').hidden = false;
   document.getElementById('decision-out').textContent = '';
+
+  // render tamper heatmaps (served as PNG blobs)
+  const hm = document.getElementById('heatmaps');
+  hm.innerHTML = '';
+  const sigs = (e.m3_tamper && e.m3_tamper.signals) || [];
+  for (const s of sigs) {
+    if (!s.heatmap_ref) continue;
+    const fig = document.createElement('figure');
+    const cap = document.createElement('figcaption');
+    cap.textContent = s.name + ' — score ' + s.score + (s.note ? ' — ' + s.note : '');
+    const img = document.createElement('img');
+    img.src = '/api/blob?ref=' + encodeURIComponent(s.heatmap_ref);
+    img.width = 280;
+    fig.appendChild(cap); fig.appendChild(img); hm.appendChild(fig);
+  }
 }
 
 async function decide(action) {

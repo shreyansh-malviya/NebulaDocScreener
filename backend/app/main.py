@@ -20,7 +20,7 @@ from pathlib import Path
 from typing import Optional
 
 from fastapi import FastAPI, File, Form, UploadFile
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response
 
 from .config import settings
 from .core import mrz as mrzlib
@@ -103,6 +103,15 @@ async def screen(
     )
     ev = await state["screener"].screen(inputs)
     return JSONResponse(ev.model_dump(mode="json"))
+
+
+@app.get("/api/blob")
+async def blob(ref: str):
+    """Serve a stored blob (e.g. a tamper heatmap PNG) by its ref."""
+    data = await state["store"].get_blob(ref)
+    if data is None:
+        return JSONResponse({"error": "not found"}, status_code=404)
+    return Response(content=data, media_type="image/png")
 
 
 @app.get("/api/sessions")

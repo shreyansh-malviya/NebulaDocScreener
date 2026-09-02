@@ -65,7 +65,7 @@ class Screener:
         # M2..M5 in parallel
         m2, m3, m4, m5 = await asyncio.gather(
             _safe("m2_validation", m2_validation.run(ev.m1_ocr), M2Validation, tb["m2_validation"], timings),
-            _safe("m3_tamper", m3_tamper.run(inputs), M3Tamper, tb["m3_tamper"], timings),
+            _safe("m3_tamper", m3_tamper.run(inputs, self.store), M3Tamper, tb["m3_tamper"], timings),
             _safe("m4_face", m4_face.run(inputs), M4Face, tb["m4_face"], timings),
             _safe("m5_chip", m5_chip.run(inputs), M5Chip, tb["m5_chip"], timings),
         )

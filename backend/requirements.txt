@@ -8,6 +8,12 @@ python-dotenv==1.0.1          # load .env
 # ---- Cryptography (Module 5 chip Passive/Active Authentication — real ECDSA + X.509) ----
 cryptography==43.0.3
 
+# ---- Module 3 classical forensics (copy-move + ELA + metadata; CPU, no GPU) ----
+opencv-python-headless==4.10.0.84
+pillow==11.0.0
+piexif==1.1.3
+numpy==2.2.6
+
 # ---- Optional storage backend (import-guarded; app runs without a Mongo server) ----
 motor==3.6.0                  # async MongoDB driver (used only when STORAGE_BACKEND=mongo)
 
