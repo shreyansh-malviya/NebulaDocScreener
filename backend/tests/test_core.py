@@ -63,6 +63,17 @@ def test_fusion_expired_floor():
     assert f.band in ("MEDIUM", "HIGH")
 
 
+def test_fusion_face_reject_raises_risk():
+    ev = Evidence()
+    ev.m2_validation.checksums = {"doc_number": True, "dob": True, "expiry": True, "composite": True}
+    ev.m2_validation.expiry_state = "VALID"
+    ev.m4_face.similarity = 0.05
+    ev.m4_face.threshold = 0.45
+    ev.m4_face.match_zone = "REJECT"
+    f = fuse(ev)
+    assert f.band in ("MEDIUM", "HIGH")
+
+
 def test_ledger_integrity_and_tamper():
     async def _run():
         store = MemoryStore()

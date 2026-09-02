@@ -15,6 +15,7 @@ Endpoints:
 """
 from __future__ import annotations
 
+import asyncio
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Optional
@@ -43,6 +44,13 @@ async def lifespan(app: FastAPI):
     state["screener"] = Screener(store, ledger)
     print(f"[startup] NEBULA screening API | storage backend = {store.backend} "
           f"| config = {settings.CONFIG_VERSION}")
+    # Warm the face model in the background so the first screening isn't slow (non-blocking).
+    try:
+        from .core import face as face_mod
+        if face_mod.available():
+            asyncio.create_task(asyncio.to_thread(face_mod.warm))
+    except Exception as exc:  # pragma: no cover
+        print(f"[startup] face warm-up skipped: {exc}")
     yield
 
 
@@ -82,6 +90,7 @@ async def screen(
     printed_expiry: str = Form(""),
     chip_mode: str = Form("none"),
     document: Optional[UploadFile] = File(None),
+    live_face: Optional[UploadFile] = File(None),
 ):
     printed = {}
     if printed_dob:
@@ -92,12 +101,14 @@ async def screen(
         printed["expiry"] = printed_expiry
 
     doc_bytes = await document.read() if document is not None else None
+    live_bytes = await live_face.read() if live_face is not None else None
     inputs = ScreenInputs(
         doc_type=doc_type,
         mrz_lines=[l for l in (mrz_line1, mrz_line2, mrz_line3) if l.strip()],
         printed=printed,
         document_bytes=doc_bytes,
         document_filename=document.filename if document is not None else None,
+        live_face_bytes=live_bytes,
         chip_present=(chip_mode != "none"),
         chip_mode=chip_mode,
     )

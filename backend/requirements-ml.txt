@@ -8,10 +8,10 @@
 # paddleocr               # general/VIZ text (PP-OCRv4/v5)
 # paddlepaddle            # (or paddlepaddle-gpu) — pin a Windows-compatible version
 
-# Module 4 — Face + liveness (CPU-friendly)
-# insightface             # buffalo_l = SCRFD + ArcFace R50 (ONNX)
-# onnxruntime             # CPU inference (use onnxruntime-gpu if desired)
-# (Silent-Face MiniFASNet ONNX is downloaded to models_cache/)
+# Module 4 — Face verification (WIRED & VERIFIED; CPU). Install these to enable M4:
+insightface==0.7.3         # buffalo_l = SCRFD detect + ArcFace R50 (ONNX); model auto-downloads
+onnxruntime==1.20.1        # CPU inference (swap for onnxruntime-gpu to use the RTX 3050)
+# (Silent-Face MiniFASNet ONNX for liveness — pending)
 
 # Module 3 — Tamper forensics
 # photoholmes             # ELA/DQ/CAT-Net/TruFor/Noiseprint under one API (+ download_weights)

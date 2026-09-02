@@ -46,7 +46,7 @@ class Settings:
         "m1_ocr": 6.0,
         "m2_validation": 1.0,
         "m3_tamper": 8.0,
-        "m4_face": 4.0,
+        "m4_face": 20.0,        # generous: covers first-call model load (latency not a priority)
         "liveness": 2.0,
         "m5_chip": 6.0,
     }

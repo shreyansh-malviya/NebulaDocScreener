@@ -56,8 +56,10 @@
           <option value="cloned">cloned chip (AA fails)</option>
         </select>
       </label><br>
-      <label>Document image (optional — image OCR is Week&nbsp;2):
-        <input type="file" id="document" accept="image/*"></label>
+      <label>Document image (optional — image OCR is Week&nbsp;2; also used for tamper + document face):
+        <input type="file" id="document" accept="image/*"></label><br>
+      <label>Live face capture (optional — matched against the document face):
+        <input type="file" id="live_face" accept="image/*"></label>
     </fieldset>
     <button type="submit">Run screening</button>
   </form>
@@ -127,6 +129,8 @@ async function screen(ev) {
   fd.append('chip_mode', document.getElementById('chip_mode').value);
   const f = document.getElementById('document').files[0];
   if (f) fd.append('document', f);
+  const lf = document.getElementById('live_face').files[0];
+  if (lf) fd.append('live_face', lf);
 
   const r = await fetch('/api/screen', { method: 'POST', body: fd });
   const e = await r.json();
@@ -157,6 +161,9 @@ async function screen(ev) {
         ? ('PA=' + e.m5_chip.passive_auth.result
            + '  AA=' + (e.m5_chip.active_auth && e.m5_chip.active_auth.result))
         : '(no chip)'),
+    'Face match: ' + (e.m4_face && e.m4_face.similarity != null
+        ? ('cosine ' + e.m4_face.similarity + ' → ' + e.m4_face.match_zone)
+        : ('(' + (e.m4_face && e.m4_face.status) + ')')),
     'Ledger seq: ' + (e.ledger && e.ledger.seq),
   ];
   document.getElementById('verdict-out').textContent = lines.join('\n');
