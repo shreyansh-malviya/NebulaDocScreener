@@ -116,6 +116,9 @@ async def screen(
     traveler_nationality: str = Form(""),
     mode: str = Form(""),
     age_band: str = Form(""),
+    ref_name: str = Form(""),
+    ref_dob: str = Form(""),
+    ref_doc_number: str = Form(""),
     document: Optional[UploadFile] = File(None),
     live_face: Optional[UploadFile] = File(None),
 ):
@@ -143,6 +146,9 @@ async def screen(
         traveler_nationality=traveler_nationality or None,
         mode=mode or None,
         age_band=age_band or None,
+        ref_name=ref_name or None,
+        ref_dob=ref_dob or None,
+        ref_doc_number=ref_doc_number or None,
     )
     ev = await state["screener"].screen(inputs)
     return JSONResponse(ev.model_dump(mode="json"))

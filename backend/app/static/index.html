@@ -54,6 +54,12 @@
       </label>
     </fieldset>
     <fieldset>
+      <legend>Second document / reference identity — cross-check (e.g. passport ↔ visa)</legend>
+      <label>Name: <input type="text" id="ref_name" size="22" placeholder="ROHIT SHARMA"></label>
+      <label>DOB (YYMMDD): <input type="text" id="ref_dob" size="8"></label>
+      <label>Doc no.: <input type="text" id="ref_doc_number" size="12"></label>
+    </fieldset>
+    <fieldset>
       <legend>Other</legend>
       <label>Document type:
         <select id="doc_type">
@@ -161,6 +167,9 @@ async function screen(ev) {
   fd.append('mode', document.getElementById('mode').value);
   fd.append('traveler_nationality', document.getElementById('traveler_nationality').value);
   fd.append('age_band', document.getElementById('age_band').value);
+  fd.append('ref_name', document.getElementById('ref_name').value);
+  fd.append('ref_dob', document.getElementById('ref_dob').value);
+  fd.append('ref_doc_number', document.getElementById('ref_doc_number').value);
   const f = document.getElementById('document').files[0];
   if (f) fd.append('document', f);
   const lf = document.getElementById('live_face').files[0];
@@ -179,6 +188,10 @@ async function screen(ev) {
     'ACCEPTANCE:' + (e.m2_validation && e.m2_validation.document_accepted === false
         ? ' NOT ACCEPTED — ' + e.m2_validation.acceptance_reason
         : (e.m2_validation && e.m2_validation.document_accepted === true ? ' accepted' : ' not evaluated')),
+    'CROSS-DOC: ' + (e.m2_validation && e.m2_validation.cross_match && e.m2_validation.cross_match.checked
+        ? (e.m2_validation.cross_match.consistent ? 'consistent'
+            : 'MISMATCH — ' + (e.m2_validation.cross_match.reasons || []).join('; '))
+        : 'not provided'),
     '',
     'NARRATIVE: ' + (e.narrative ? e.narrative.text : ''),
     '',

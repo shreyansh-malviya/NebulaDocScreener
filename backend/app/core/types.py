@@ -21,3 +21,7 @@ class ScreenInputs:
     traveler_nationality: Optional[str] = None
     mode: Optional[str] = None           # LAND | AIR
     age_band: Optional[str] = None       # UNDER_18 | ADULT | 65_PLUS
+    # reference identity from a SECOND document (e.g. the visa), for cross-document matching
+    ref_name: Optional[str] = None
+    ref_dob: Optional[str] = None        # YYMMDD
+    ref_doc_number: Optional[str] = None

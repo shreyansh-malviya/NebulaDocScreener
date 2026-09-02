@@ -9,6 +9,7 @@ from __future__ import annotations
 import re
 from datetime import date
 
+from ..core import match as matchlib
 from ..core import policy
 from ..core.types import ScreenInputs
 from ..models import M1OCR, M2Validation
@@ -113,6 +114,18 @@ async def run(m1: M1OCR, inputs: ScreenInputs) -> M2Validation:
             if match[key] is False:
                 m2.reasons.append(f"MRZ<->printed MISMATCH on {key} (printed {printed!r} vs MRZ {mrz_val!r}).")
         m2.viz_mrz_match = match
+
+    # ---- cross-document identity match (e.g. passport <-> visa consistency) ----
+    ref = {"name": inputs.ref_name, "dob": inputs.ref_dob, "doc_number": inputs.ref_doc_number}
+    if any(ref.values()):
+        extracted = {
+            "name": f"{fields.get('surname', '')} {fields.get('given_names', '')}".strip(),
+            "dob": fields.get("dob"),
+            "doc_number": fields.get("doc_number"),
+        }
+        m2.cross_match = matchlib.cross_match(extracted, ref)
+        for r in m2.cross_match.get("reasons", []):
+            m2.reasons.append(r)
 
     m2.hard_fail = any(v is False for v in checks.values())
     m2.status = "OK"

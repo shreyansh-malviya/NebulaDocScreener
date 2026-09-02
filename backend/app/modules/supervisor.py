@@ -44,6 +44,9 @@ def narrate(ev: Evidence, cfg=settings) -> Narrative:
     mismatched = [k for k, v in (m2.viz_mrz_match or {}).items() if v is False]
     if mismatched:
         parts.append("Printed vs MRZ mismatch on: " + ", ".join(mismatched) + ".")
+    cm = m2.cross_match or {}
+    if cm.get("checked") and cm.get("consistent") is False:
+        parts.append("Cross-document mismatch: " + " ".join(cm.get("reasons", [])))
 
     if ev.m3_tamper.tampered_fields:
         parts.append("Tamper localised over: " + ", ".join(ev.m3_tamper.tampered_fields) + ".")

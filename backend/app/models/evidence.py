@@ -73,6 +73,7 @@ class M2Validation(BaseModel):
     viz_mrz_match: dict[str, Optional[bool]] = Field(default_factory=dict)
     document_accepted: Optional[bool] = None     # per the SSB/BoI acceptance-policy table
     acceptance_reason: Optional[str] = None
+    cross_match: Optional[dict] = None           # cross-document name/DOB consistency (passport↔visa)
     hard_fail: bool = False
     reasons: list[str] = Field(default_factory=list)
 

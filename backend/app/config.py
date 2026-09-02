@@ -62,6 +62,7 @@ class Settings:
         "viz_mismatch": 0.20,
         "face": 0.30,
         "acceptance": 0.25,     # document not accepted for this crossing (per SSB/BoI policy)
+        "cross_doc": 0.25,      # cross-document name/DOB mismatch (passport↔visa consistency)
         "identity": 0.25,       # multiple-identity / photo-swap alert from the gallery
         "chip_absent": 0.05,
         "advisory": 0.05,

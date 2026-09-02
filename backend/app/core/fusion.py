@@ -81,6 +81,10 @@ def fuse(ev: Evidence, cfg=settings) -> Fusion:
     # Multiple-identity / photo-swap alert => at least MEDIUM.
     if ev.records.identity_alerts and _RANK["MEDIUM"] > _RANK[floor]:
         floor = "MEDIUM"
+    # Cross-document identity mismatch (name/DOB, e.g. passport↔visa) => at least MEDIUM.
+    _cm = m2.cross_match or {}
+    if _cm.get("checked") and _cm.get("consistent") is False and _RANK["MEDIUM"] > _RANK[floor]:
+        floor = "MEDIUM"
 
     # ---------------- Tier 2: soft fusion over AVAILABLE signals ----------------
     w = cfg.FUSION_WEIGHTS
@@ -99,6 +103,9 @@ def fuse(ev: Evidence, cfg=settings) -> Fusion:
 
     if ev.records.identity_alerts:
         parts.append(("identity_alert", 0.75, w["identity"]))
+
+    if _cm.get("checked") and _cm.get("consistent") is False:
+        parts.append(("cross_doc_mismatch", 0.8, w["cross_doc"]))
 
     if m4.similarity is not None:
         hi, lo = cfg.FACE_TAU_HI, cfg.FACE_TAU_LO
