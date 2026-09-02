@@ -28,8 +28,11 @@
     <button onclick="loadSample('tampered')">Load TAMPERED sample (edited DOB)</button>
   </p>
   <form id="screen-form" onsubmit="screen(event)">
+    <p><em>Provide the passport EITHER way — <strong>upload an image</strong> (it reads the MRZ automatically via OCR)
+       <strong>or paste the MRZ text</strong>. If you give both, the typed MRZ is used and the image still drives the
+       tamper + face checks.</em></p>
     <fieldset>
-      <legend>MRZ (paste the machine-readable zone — real offline validation)</legend>
+      <legend>MRZ text — paste the 2 lines from the bottom of the passport (optional if you upload an image)</legend>
       <label>Line 1:<br><input type="text" id="mrz_line1" size="60" value=""></label><br>
       <label>Line 2:<br><input type="text" id="mrz_line2" size="60" value=""></label><br>
       <label>Line 3 (TD1 IDs only):<br><input type="text" id="mrz_line3" size="60" value=""></label>
@@ -76,7 +79,7 @@
           <option value="cloned">cloned chip (AA fails)</option>
         </select>
       </label><br>
-      <label>Document image (optional — image OCR is Week&nbsp;2; also used for tamper + document face):
+      <label>Document image — <strong>reads the MRZ automatically (ONNX OCR)</strong>; also used for tamper + document face:
         <input type="file" id="document" accept="image/*"></label><br>
       <label>Live face capture (optional — matched against the document face):
         <input type="file" id="live_face" accept="image/*"></label>
