@@ -42,3 +42,15 @@ MONGO_URI=mongodb://localhost:27017
 
 ## Config / secrets
 Copy `.env.example` to `.env`. The backend runs with safe defaults if you don't.
+
+## Deploy (Render free tier — ONNX, no GPU)
+The stack is **onnxruntime-only** (no PyTorch/Paddle/binaries), so it deploys on Render's free
+tier (512 MB, CPU):
+- `backend/Dockerfile` builds a LITE image (`requirements-deploy.txt` + `rapidocr-onnxruntime --no-deps`).
+- `render.yaml` (repo root) is a one-click blueprint (`/api/health` check, in-memory storage).
+- **Image→MRZ works** via RapidOCR (ONNX): upload a document image → M1 reads + auto-corrects + validates.
+- **Memory profile:** deterministic core + tamper (OpenCV) + MRZ OCR (RapidOCR) fit ~350–450 MB.
+  **Face (InsightFace ~300 MB) is EXCLUDED** from the free-tier image — Module 4 abstains gracefully.
+  For full face matching, install `requirements.txt` + `requirements-ml.txt` on a ≥1 GB instance.
+
+Generate test images (no real documents):  `python -m tools.gen_mrz_image .`  → `mrz_valid.png`, `mrz_tampered.png`.

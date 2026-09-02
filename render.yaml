@@ -1,0 +1,17 @@
+# Render blueprint — deploys the LITE (ONNX-only) backend on the free tier.
+# See backend/README.md "Deploy" for the memory profile (face is excluded to fit 512 MB).
+services:
+  - type: web
+    name: nebula-screening
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: free
+    healthCheckPath: /api/health
+    envVars:
+      - key: STORAGE_BACKEND
+        value: memory
+      - key: LEDGER_SECRET
+        generateValue: true
+      - key: STATION_ID
+        value: SSB-DEMO-LANE-1

@@ -2,11 +2,11 @@
 # Kept separate from requirements.txt so the reliable spine installs fast and clean.
 # Versions are indicative; pin exact working versions on the build machine (RTX 3050 / Python 3.10).
 
-# Module 1 — OCR / MRZ (image path)
-# opencv-python-headless
-# fastmrz                 # MRZ detect+read (ONNX seg + Tesseract OCR-B). Needs Tesseract binary.
-# paddleocr               # general/VIZ text (PP-OCRv4/v5)
-# paddlepaddle            # (or paddlepaddle-gpu) — pin a Windows-compatible version
+# Module 1 — OCR / MRZ (image path)  [WIRED via ONNX RapidOCR]
+onnxruntime==1.20.1
+# Install rapidocr WITHOUT deps so it reuses opencv-python-headless (full opencv breaks headless hosts):
+#   pip install --no-deps rapidocr-onnxruntime==1.4.4  &&  pip install pyclipper shapely
+# (Optional higher-accuracy MRZ path, not required: fastmrz + Tesseract OCR-B binary)
 
 # Module 4 — Face verification (WIRED & VERIFIED; CPU). Install these to enable M4:
 insightface==0.7.3         # buffalo_l = SCRFD detect + ArcFace R50 (ONNX); model auto-downloads

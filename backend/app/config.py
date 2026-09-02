@@ -43,7 +43,7 @@ class Settings:
 
     # --- per-module timeboxes (seconds) — degrade-to-abstain on timeout ---
     TIMEBOX = {
-        "m1_ocr": 6.0,
+        "m1_ocr": 15.0,        # image OCR (RapidOCR) cold-start safe; MRZ-text path is instant
         "m2_validation": 1.0,
         "m3_tamper": 8.0,
         "m4_face": 20.0,        # generous: covers first-call model load (latency not a priority)

@@ -57,6 +57,12 @@ async def lifespan(app: FastAPI):
             asyncio.create_task(asyncio.to_thread(face_mod.warm))
     except Exception as exc:  # pragma: no cover
         print(f"[startup] face warm-up skipped: {exc}")
+    try:
+        from .core import ocr as ocr_mod
+        if ocr_mod.available():
+            asyncio.create_task(asyncio.to_thread(ocr_mod.warm))
+    except Exception as exc:  # pragma: no cover
+        print(f"[startup] ocr warm-up skipped: {exc}")
     yield
 
 
