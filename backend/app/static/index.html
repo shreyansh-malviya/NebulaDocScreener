@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NEBULA — Document Screening Console (minimal)</title>
+  <!-- Intentionally NO CSS: this is the functional, wiring-first officer console.
+       Styling comes later; every control below is wired to the REAL backend. -->
+</head>
+<body>
+  <h1>NEBULA — AI Document Screening Console</h1>
+  <p>
+    Minimal, un-styled console wired to the real backend. The deterministic core
+    (MRZ check digits, validation, risk fusion, audit ledger) is fully functional;
+    tamper / face / chip modules are labelled STUB until Week&nbsp;2.
+  </p>
+
+  <hr>
+  <h2>1. Pre-flight self-test (deterministic core)</h2>
+  <button onclick="selftest()">Run self-test</button>
+  <span id="selftest-summary"></span>
+  <pre id="selftest-out"></pre>
+
+  <hr>
+  <h2>2. Screen a document</h2>
+  <p>
+    <button onclick="loadSample('valid')">Load VALID sample passport</button>
+    <button onclick="loadSample('tampered')">Load TAMPERED sample (edited DOB)</button>
+  </p>
+  <form id="screen-form" onsubmit="screen(event)">
+    <fieldset>
+      <legend>MRZ (paste the machine-readable zone — real offline validation)</legend>
+      <label>Line 1:<br><input type="text" id="mrz_line1" size="60" value=""></label><br>
+      <label>Line 2:<br><input type="text" id="mrz_line2" size="60" value=""></label><br>
+      <label>Line 3 (TD1 IDs only):<br><input type="text" id="mrz_line3" size="60" value=""></label>
+    </fieldset>
+    <fieldset>
+      <legend>Printed (VIZ) fields — optional, for the MRZ&nbsp;↔&nbsp;printed cross-check</legend>
+      <label>Printed DOB (YYMMDD): <input type="text" id="printed_dob" size="8"></label>
+      <label>Printed passport no.: <input type="text" id="printed_doc_number" size="12"></label>
+      <label>Printed expiry (YYMMDD): <input type="text" id="printed_expiry" size="8"></label>
+    </fieldset>
+    <fieldset>
+      <legend>Other</legend>
+      <label>Document type:
+        <select id="doc_type">
+          <option>PASSPORT</option><option>VISA</option><option>NATIONAL_ID</option>
+          <option>DRIVING_LICENSE</option><option>PERMIT</option>
+        </select>
+      </label>
+      <label><input type="checkbox" id="chip_present"> Chip presented (NFC)</label><br>
+      <label>Document image (optional — image OCR is Week&nbsp;2):
+        <input type="file" id="document" accept="image/*"></label>
+    </fieldset>
+    <button type="submit">Run screening</button>
+  </form>
+
+  <h3>Verdict</h3>
+  <pre id="verdict-out"></pre>
+  <details>
+    <summary>Full Evidence object (JSON)</summary>
+    <pre id="evidence-out"></pre>
+  </details>
+  <div id="decision-bar" hidden>
+    <strong>Officer decision:</strong>
+    <button onclick="decide('APPROVE')">Approve</button>
+    <button onclick="decide('REFER')">Refer</button>
+    <button onclick="decide('DENY')">Deny</button>
+    <span id="decision-out"></span>
+  </div>
+
+  <hr>
+  <h2>3. Audit ledger (tamper-evident)</h2>
+  <button onclick="viewLedger()">View ledger</button>
+  <button onclick="verifyLedger()">Verify integrity</button>
+  <button onclick="tamperLedger()">Tamper record #0 (demo)</button>
+  <pre id="ledger-out"></pre>
+
+  <hr>
+  <h2>4. Recent screenings</h2>
+  <button onclick="listSessions()">List recent</button>
+  <pre id="sessions-out"></pre>
+
+<script>
+let LAST_SESSION_ID = null;
+
+async function selftest() {
+  const r = await fetch('/api/selftest');
+  const d = await r.json();
+  document.getElementById('selftest-summary').textContent =
+    ` → ${d.passed}/${d.total} passed ${d.all_ok ? '✅' : '❌'}`;
+  document.getElementById('selftest-out').textContent = JSON.stringify(d, null, 2);
+}
+
+async function loadSample(variant) {
+  const r = await fetch('/api/sample?variant=' + variant);
+  const s = await r.json();
+  document.getElementById('mrz_line1').value = s.line1;
+  document.getElementById('mrz_line2').value = s.line2;
+  document.getElementById('mrz_line3').value = s.line3 || '';
+  document.getElementById('doc_type').value = s.doc_type;
+  document.getElementById('printed_dob').value = (s.printed && s.printed.dob) || '';
+  document.getElementById('printed_doc_number').value = (s.printed && s.printed.doc_number) || '';
+  document.getElementById('printed_expiry').value = (s.printed && s.printed.expiry) || '';
+}
+
+async function screen(ev) {
+  ev.preventDefault();
+  const fd = new FormData();
+  fd.append('mrz_line1', document.getElementById('mrz_line1').value);
+  fd.append('mrz_line2', document.getElementById('mrz_line2').value);
+  fd.append('mrz_line3', document.getElementById('mrz_line3').value);
+  fd.append('doc_type', document.getElementById('doc_type').value);
+  fd.append('printed_dob', document.getElementById('printed_dob').value);
+  fd.append('printed_doc_number', document.getElementById('printed_doc_number').value);
+  fd.append('printed_expiry', document.getElementById('printed_expiry').value);
+  fd.append('chip_present', document.getElementById('chip_present').checked);
+  const f = document.getElementById('document').files[0];
+  if (f) fd.append('document', f);
+
+  const r = await fetch('/api/screen', { method: 'POST', body: fd });
+  const e = await r.json();
+  LAST_SESSION_ID = e.session_id;
+
+  const fu = e.fusion || {};
+  const lines = [
+    'BAND:      ' + fu.band + (fu.abstain ? '  (abstain → manual review)' : ''),
+    'GATE:      ' + (fu.gate_fired || '(none — soft score ' + fu.soft_score + ')'),
+    'RISK:      ' + fu.risk,
+    'ACTION:    ' + (fu.recommended_action || ''),
+    '',
+    'NARRATIVE: ' + (e.narrative ? e.narrative.text : ''),
+    '',
+    'M2 reasons:',
+    ...((e.m2_validation && e.m2_validation.reasons) || []).map(x => '  - ' + x),
+    '',
+    'Contributions:',
+    ...((fu.contributions) || []).map(c => '  - ' + c.signal + ': risk ' + c.risk + ' (w ' + c.weight + ')'),
+    '',
+    'Module status: '
+      + 'M1=' + (e.m1_ocr && e.m1_ocr.status)
+      + '  M2=' + (e.m2_validation && e.m2_validation.status)
+      + '  M3=' + (e.m3_tamper && e.m3_tamper.status)
+      + '  M4=' + (e.m4_face && e.m4_face.status)
+      + '  M5=' + (e.m5_chip && e.m5_chip.status),
+    'Ledger seq: ' + (e.ledger && e.ledger.seq),
+  ];
+  document.getElementById('verdict-out').textContent = lines.join('\n');
+  document.getElementById('evidence-out').textContent = JSON.stringify(e, null, 2);
+  document.getElementById('decision-bar').hidden = false;
+  document.getElementById('decision-out').textContent = '';
+}
+
+async function decide(action) {
+  if (!LAST_SESSION_ID) return;
+  const fd = new FormData(); fd.append('action', action);
+  const r = await fetch('/api/sessions/' + LAST_SESSION_ID + '/decision', { method: 'POST', body: fd });
+  const e = await r.json();
+  document.getElementById('decision-out').textContent =
+    ' → recorded: ' + (e.decision && e.decision.officer_action) + ' at ' + (e.decision && e.decision.at);
+}
+
+async function viewLedger() {
+  const r = await fetch('/api/ledger');
+  document.getElementById('ledger-out').textContent = JSON.stringify(await r.json(), null, 2);
+}
+async function verifyLedger() {
+  const r = await fetch('/api/ledger/verify');
+  const d = await r.json();
+  document.getElementById('ledger-out').textContent =
+    (d.intact ? '✅ CHAIN INTACT' : '❌ CHAIN BROKEN at seq ' + JSON.stringify(d.broken_seqs))
+    + '\n' + JSON.stringify(d, null, 2);
+}
+async function tamperLedger() {
+  const fd = new FormData(); fd.append('seq', '0');
+  const r = await fetch('/api/ledger/tamper-demo', { method: 'POST', body: fd });
+  const d = await r.json();
+  document.getElementById('ledger-out').textContent =
+    'After tampering record #0 (verify re-run):\n'
+    + (d.intact ? '✅ INTACT' : '❌ CHAIN BROKEN at seq ' + JSON.stringify(d.broken_seqs))
+    + '\n' + JSON.stringify(d, null, 2);
+}
+async function listSessions() {
+  const r = await fetch('/api/sessions?limit=20');
+  const d = await r.json();
+  document.getElementById('sessions-out').textContent =
+    d.map(s => `${s.created_at}  ${s.fusion.band}  gate=${s.fusion.gate_fired || '-'}  ${s.session_id}`).join('\n')
+    || '(none yet)';
+}
+</script>
+</body>
+</html>
