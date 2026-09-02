@@ -42,6 +42,12 @@ async def lifespan(app: FastAPI):
     state["store"] = store
     state["ledger"] = ledger
     state["screener"] = Screener(store, ledger)
+    # Seed a MOCK watchlist (real LOC / Interpol SLTD are BoI/CBI-side and restricted).
+    for entry in (
+        {"value": "L898902C3", "type": "doc_number", "reason": "MOCK: reported lost/stolen (Interpol SLTD demo)"},
+        {"value": "Z1234567", "type": "doc_number", "reason": "MOCK: lookout circular (demo)"},
+    ):
+        await store.watchlist_add(entry)
     print(f"[startup] NEBULA screening API | storage backend = {store.backend} "
           f"| config = {settings.CONFIG_VERSION}")
     # Warm the face model in the background so the first screening isn't slow (non-blocking).
@@ -169,3 +175,31 @@ async def ledger_verify():
 async def ledger_tamper(seq: int = Form(0)):
     # DEMO ONLY + destructive: mutates a stored record so the chain visibly breaks.
     return await state["ledger"].demo_tamper(seq)
+
+
+@app.get("/api/watchlist")
+async def watchlist():
+    return await state["store"].watchlist_all()
+
+
+@app.post("/api/watchlist")
+async def watchlist_add(value: str = Form(...), reason: str = Form(""), type: str = Form("doc_number")):
+    await state["store"].watchlist_add({"value": value, "type": type, "reason": reason or "added by officer"})
+    return {"ok": True, "count": len(await state["store"].watchlist_all())}
+
+
+@app.get("/api/oversight")
+async def oversight():
+    """Accountability view: officer decisions that OVERRODE the system (cleared a non-clean case)."""
+    led = await state["ledger"].all()
+    overrides = [
+        {"seq": r.get("seq"), "session_id": r.get("session_id"), "at": r.get("timestamp"),
+         "officer_id": (r.get("verdict") or {}).get("officer_id"),
+         "action": (r.get("verdict") or {}).get("officer_action"),
+         "reason": (r.get("verdict") or {}).get("reason"),
+         "system_band": (r.get("verdict") or {}).get("system_band"),
+         "system_gate": (r.get("verdict") or {}).get("system_gate")}
+        for r in led
+        if r.get("event") == "OFFICER_DECISION" and (r.get("verdict") or {}).get("override")
+    ]
+    return {"override_count": len(overrides), "overrides": overrides}

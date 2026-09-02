@@ -14,6 +14,7 @@ _GATE_TEXT = {
     "MRZ_CHECKSUM_FAIL": "one or more MRZ check digits do not match (the document is internally inconsistent)",
     "LIVENESS_SPOOF": "the live capture was flagged as a presentation attack (photo/screen replay)",
     "CHIP_CLONE": "the chip failed Active Authentication (possible clone)",
+    "WATCHLIST_HIT": "the document matches a watchlist / lost-stolen (Interpol SLTD-style) entry",
 }
 
 
@@ -48,6 +49,11 @@ def narrate(ev: Evidence, cfg=settings) -> Narrative:
         parts.append("Tamper localised over: " + ", ".join(ev.m3_tamper.tampered_fields) + ".")
     if ev.m4_face.match_zone:
         parts.append(f"Face match: {ev.m4_face.match_zone}.")
+
+    if ev.records.watchlist_hit:
+        parts.append("Watchlist: " + (ev.records.watchlist_reason or "hit") + ".")
+    for alert in ev.records.identity_alerts:
+        parts.append(alert)
 
     parts.append(f"Recommended action: {f.recommended_action}")
     parts.append("The officer makes the final decision; this is decision support.")

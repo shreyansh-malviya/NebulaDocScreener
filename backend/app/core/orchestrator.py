@@ -16,6 +16,7 @@ from ..models import (Context, Evidence, LedgerRef, M1OCR, M2Validation,
                       M3Tamper, M4Face, M5Chip)
 from ..modules import m1_ocr, m2_validation, m3_tamper, m4_face, m5_chip, supervisor
 from .fusion import fuse
+from .records import check_records
 from .types import ScreenInputs
 
 
@@ -74,6 +75,13 @@ class Screener:
         )
         ev.m2_validation, ev.m3_tamper, ev.m4_face, ev.m5_chip = m2, m3, m4, m5
         ev.module_timings = timings
+
+        # database checks (watchlist + multiple-identity) → feed fusion
+        try:
+            ev.records = await check_records(ev, self.store)
+        except Exception as exc:  # degrade silently — never fail the screening
+            ev.records.checked = False
+            ev.records.identity_alerts.append(f"records check error: {type(exc).__name__}")
 
         # deterministic verdict, then narrative
         ev.fusion = fuse(ev)

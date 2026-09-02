@@ -31,6 +31,8 @@ async def run(inputs: ScreenInputs) -> M4Face:
         which = "document" if doc else "live"
         res = face.embed(doc or live)
         m4.status = "OK" if res["ok"] else "NO_FACE"
+        if which == "document" and res["ok"]:
+            m4.doc_embedding = res["embedding"]          # feed the identity gallery
         m4.notes.append(f"Only the {which} image was provided; both document photo and live "
                         f"capture are needed to match (face detected={res['ok']}).")
         return m4
@@ -41,6 +43,7 @@ async def run(inputs: ScreenInputs) -> M4Face:
         m4.notes.append(f"Face not detected (document={ed.get('reason', 'ok')}, live={el.get('reason', 'ok')}).")
         return m4
 
+    m4.doc_embedding = ed["embedding"]                    # document face template → gallery
     sim = face.cosine(ed["embedding"], el["embedding"])
     m4.similarity = round(sim, 4)
     m4.threshold = settings.FACE_TAU_HI

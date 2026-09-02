@@ -9,6 +9,7 @@ from .evidence import (  # noqa: F401
     TamperSignal,
     M4Face,
     M5Chip,
+    RecordsCheck,
     Fusion,
     Contribution,
     Narrative,

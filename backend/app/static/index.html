@@ -110,6 +110,19 @@
   <button onclick="listSessions()">List recent</button>
   <pre id="sessions-out"></pre>
 
+  <hr>
+  <h2>5. Watchlist (mock lost/stolen &amp; lookout — real LOC/SLTD are BoI/CBI-side)</h2>
+  <button onclick="viewWatchlist()">View watchlist</button>
+  <label>Add doc no.: <input type="text" id="wl_value" size="12"></label>
+  <label>Reason: <input type="text" id="wl_reason" size="24"></label>
+  <button onclick="addWatchlist()">Add</button>
+  <pre id="watchlist-out"></pre>
+
+  <hr>
+  <h2>6. Oversight — officer overrides (accountability / anti-bribery + error audit)</h2>
+  <button onclick="viewOversight()">View overrides</button>
+  <pre id="oversight-out"></pre>
+
 <script>
 let LAST_SESSION_ID = null;
 
@@ -188,6 +201,9 @@ async function screen(ev) {
     'Face match: ' + (e.m4_face && e.m4_face.similarity != null
         ? ('cosine ' + e.m4_face.similarity + ' → ' + e.m4_face.match_zone)
         : ('(' + (e.m4_face && e.m4_face.status) + ')')),
+    'Records:   ' + (e.records && e.records.watchlist_hit ? ('WATCHLIST HIT — ' + e.records.watchlist_reason) : 'no watchlist hit')
+        + (e.records && e.records.identity_alerts && e.records.identity_alerts.length
+            ? ('  | IDENTITY: ' + e.records.identity_alerts.join(' ; ')) : ''),
     'Ledger seq: ' + (e.ledger && e.ledger.seq),
   ];
   document.getElementById('verdict-out').textContent = lines.join('\n');
@@ -252,6 +268,23 @@ async function listSessions() {
   document.getElementById('sessions-out').textContent =
     d.map(s => `${s.created_at}  ${s.fusion.band}  gate=${s.fusion.gate_fired || '-'}  ${s.session_id}`).join('\n')
     || '(none yet)';
+}
+async function viewWatchlist() {
+  const r = await fetch('/api/watchlist');
+  document.getElementById('watchlist-out').textContent = JSON.stringify(await r.json(), null, 2);
+}
+async function addWatchlist() {
+  const fd = new FormData();
+  fd.append('value', document.getElementById('wl_value').value);
+  fd.append('reason', document.getElementById('wl_reason').value);
+  await fetch('/api/watchlist', { method: 'POST', body: fd });
+  viewWatchlist();
+}
+async function viewOversight() {
+  const r = await fetch('/api/oversight');
+  const d = await r.json();
+  document.getElementById('oversight-out').textContent =
+    'Overrides logged: ' + d.override_count + '\n' + JSON.stringify(d.overrides, null, 2);
 }
 </script>
 </body>

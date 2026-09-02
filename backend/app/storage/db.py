@@ -30,9 +30,32 @@ class MemoryStore:
         self._session_order: list[str] = []
         self._ledger: list[dict] = []
         self._blobs: dict[str, bytes] = {}
+        self._watchlist: list[dict] = []
+        self._gallery: list[dict] = []
 
     async def ping(self) -> bool:
         return True
+
+    # --- watchlist (mock lost/stolen + lookout list) ---
+    async def watchlist_add(self, entry: dict) -> None:
+        self._watchlist.append(entry)
+
+    async def watchlist_all(self) -> list[dict]:
+        return list(self._watchlist)
+
+    async def watchlist_check(self, value: str) -> Optional[dict]:
+        v = (value or "").upper().replace("<", "")
+        for e in self._watchlist:
+            if (e.get("value", "").upper().replace("<", "")) == v:
+                return e
+        return None
+
+    # --- identity gallery (multiple-identity / photo-swap detection) ---
+    async def gallery_add(self, entry: dict) -> None:
+        self._gallery.append(entry)
+
+    async def gallery_all(self) -> list[dict]:
+        return list(self._gallery)
 
     # --- sessions ---
     async def save_session(self, ev_dict: dict) -> None:
@@ -88,6 +111,8 @@ class MongoStore:
         self._db = self._client[db_name]
         self._sessions = self._db["sessions"]
         self._ledger = self._db["ledger"]
+        self._watchlist_c = self._db["watchlist"]
+        self._gallery_c = self._db["gallery"]
         self._fs = AsyncIOMotorGridFSBucket(self._db)
 
     async def ping(self) -> bool:
@@ -116,6 +141,25 @@ class MongoStore:
 
     async def ledger_mutate(self, seq: int, patch: dict) -> None:
         await self._ledger.update_one({"seq": seq}, {"$set": patch})
+
+    async def watchlist_add(self, entry: dict) -> None:
+        await self._watchlist_c.insert_one(dict(entry))
+
+    async def watchlist_all(self) -> list[dict]:
+        return [d async for d in self._watchlist_c.find({}, {"_id": 0})]
+
+    async def watchlist_check(self, value: str) -> Optional[dict]:
+        v = (value or "").upper().replace("<", "")
+        async for e in self._watchlist_c.find({}, {"_id": 0}):
+            if e.get("value", "").upper().replace("<", "") == v:
+                return e
+        return None
+
+    async def gallery_add(self, entry: dict) -> None:
+        await self._gallery_c.insert_one(dict(entry))
+
+    async def gallery_all(self) -> list[dict]:
+        return [d async for d in self._gallery_c.find({}, {"_id": 0})]
 
     async def put_blob(self, data: bytes, meta: Optional[dict] = None) -> tuple[str, str]:
         digest = _sha256_bytes(data)

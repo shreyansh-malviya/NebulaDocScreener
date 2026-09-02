@@ -67,10 +67,19 @@ def fuse(ev: Evidence, cfg=settings) -> Fusion:
                       recommended_action=_action("HIGH"),
                       contributions=[Contribution(signal="chip.active_auth", risk=0.9, weight="GATE")])
 
+    # Watchlist / lost-stolen hit => HIGH (known-bad document or person).
+    if ev.records.watchlist_hit:
+        return Fusion(gate_fired="WATCHLIST_HIT", risk=0.95, band="HIGH",
+                      recommended_action=_action("HIGH"),
+                      contributions=[Contribution(signal="records.watchlist", risk=0.95, weight="GATE")])
+
     # Expired document => at least MEDIUM (floor, not a hard HIGH).
     floor = "MEDIUM" if m2.expiry_state == "EXPIRED" else "LOW"
     # Document not accepted for this crossing (per SSB/BoI policy) => at least MEDIUM.
     if m2.document_accepted is False and _RANK["MEDIUM"] > _RANK[floor]:
+        floor = "MEDIUM"
+    # Multiple-identity / photo-swap alert => at least MEDIUM.
+    if ev.records.identity_alerts and _RANK["MEDIUM"] > _RANK[floor]:
         floor = "MEDIUM"
 
     # ---------------- Tier 2: soft fusion over AVAILABLE signals ----------------
@@ -87,6 +96,9 @@ def fuse(ev: Evidence, cfg=settings) -> Fusion:
 
     if m2.document_accepted is False:
         parts.append(("not_accepted", 0.8, w["acceptance"]))
+
+    if ev.records.identity_alerts:
+        parts.append(("identity_alert", 0.75, w["identity"]))
 
     if m4.similarity is not None:
         hi, lo = cfg.FACE_TAU_HI, cfg.FACE_TAU_LO

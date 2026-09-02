@@ -106,6 +106,7 @@ class M4Face(BaseModel):
     match_zone: Optional[str] = None             # ACCEPT | REVIEW | REJECT
     liveness: dict[str, Any] = Field(default_factory=dict)     # {label, score}
     advisory: dict[str, Any] = Field(default_factory=dict)     # {deepfake_suspicion, morph_suspicion}
+    doc_embedding: Optional[list[float]] = None                # document face template → identity gallery
     notes: list[str] = Field(default_factory=list)
 
 
@@ -116,6 +117,14 @@ class M5Chip(BaseModel):
     active_auth: dict[str, Any] = Field(default_factory=dict)    # {result}
     chip_vs_printed: dict[str, Any] = Field(default_factory=dict)
     notes: list[str] = Field(default_factory=list)
+
+
+# ---------- Records / database checks (watchlist + multiple-identity) ----------
+class RecordsCheck(BaseModel):
+    checked: bool = False
+    watchlist_hit: bool = False
+    watchlist_reason: Optional[str] = None
+    identity_alerts: list[str] = Field(default_factory=list)   # multiple-identity / photo-swap findings
 
 
 # ---------- Fusion (the verdict) ----------
@@ -172,6 +181,7 @@ class Evidence(BaseModel):
     m3_tamper: M3Tamper = Field(default_factory=M3Tamper)
     m4_face: M4Face = Field(default_factory=M4Face)
     m5_chip: M5Chip = Field(default_factory=M5Chip)
+    records: RecordsCheck = Field(default_factory=RecordsCheck)
 
     fusion: Fusion = Field(default_factory=Fusion)
     narrative: Narrative = Field(default_factory=Narrative)
