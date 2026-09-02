@@ -85,6 +85,14 @@ async def sample(variant: str = "valid"):
     return mrzlib.sample_passport(tampered=(variant == "tampered"))
 
 
+@app.post("/api/mrz-correct")
+async def mrz_correct_ep(line1: str = Form(""), line2: str = Form(""), line3: str = Form("")):
+    """Demo the OCR-correction pipeline: noisy MRZ lines → corrected + validated."""
+    from .core import mrz_correct
+    lines = [l for l in (line1, line2, line3) if l.strip()]
+    return mrz_correct.correct_mrz(lines)
+
+
 @app.post("/api/screen")
 async def screen(
     mrz_line1: str = Form(""),
