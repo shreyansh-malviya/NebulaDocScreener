@@ -14,9 +14,9 @@ RUN pip install --no-cache-dir -r requirements-deploy.txt \
 
 COPY app ./app
 
-# free-tier defaults: in-memory storage, template narrative, no heavy face model
-ENV STORAGE_BACKEND=memory \
-    LLM_NARRATIVE=template \
+# Storage auto-detects: set MONGODB_URI in the environment to persist to MongoDB Atlas
+# (survives Render free-tier spin-downs); otherwise it runs on the in-memory store.
+ENV LLM_NARRATIVE=template \
     PYTHONUNBUFFERED=1
 
 EXPOSE 8000

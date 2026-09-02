@@ -26,9 +26,10 @@ class Settings:
     STATION_ID = os.getenv("STATION_ID", "SSB-DEMO-LANE-1")
 
     # --- storage ---
-    STORAGE_BACKEND = os.getenv("STORAGE_BACKEND", "memory").lower()  # memory | mongo
-    MONGO_URI = os.getenv("MONGO_URI", "")
+    # Accept either MONGO_URI or MONGODB_URI; auto-enable the mongo backend when a URI is present.
+    MONGO_URI = os.getenv("MONGO_URI") or os.getenv("MONGODB_URI") or ""
     MONGO_DB = os.getenv("MONGO_DB", "nebula_screening")
+    STORAGE_BACKEND = os.getenv("STORAGE_BACKEND", "mongo" if MONGO_URI else "memory").lower()
 
     # --- audit ledger ---
     LEDGER_SECRET = os.getenv("LEDGER_SECRET", "dev-insecure-station-key-change-me")
