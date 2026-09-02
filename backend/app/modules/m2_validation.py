@@ -9,6 +9,8 @@ from __future__ import annotations
 import re
 from datetime import date
 
+from ..core import policy
+from ..core.types import ScreenInputs
 from ..models import M1OCR, M2Validation
 
 # Minimal ICAO-specific codes that are valid but not ISO-3166 alpha-3 (avoid false flags).
@@ -35,12 +37,21 @@ def _norm(v: str) -> str:
     return re.sub(r"[^A-Z0-9]", "", str(v).upper())
 
 
-async def run(m1: M1OCR) -> M2Validation:
+async def run(m1: M1OCR, inputs: ScreenInputs) -> M2Validation:
     m2 = M2Validation()
 
+    # --- acceptance policy (runs even for non-MRZ documents like Aadhaar) ---
+    nationality = inputs.traveler_nationality or (m1.mrz.fields.get("nationality") if m1.mrz.present else None)
+    acc = policy.check_acceptance(inputs.doc_type, nationality, inputs.border, inputs.mode, inputs.age_band)
+    m2.document_accepted = acc["accepted"]
+    m2.acceptance_reason = acc["reason"]
+    if acc["accepted"] is False:
+        m2.reasons.append(acc["reason"])
+
     if not m1.mrz.present:
-        m2.status = "SKIPPED"
-        m2.reasons.append("No MRZ available to validate.")
+        # No MRZ (e.g. Aadhaar / PAN) — acceptance still evaluated above.
+        m2.status = "OK" if m2.document_accepted is not None else "SKIPPED"
+        m2.reasons.append("No MRZ present to validate check digits (non-MRZ document).")
         return m2
 
     fields = m1.mrz.fields

@@ -41,10 +41,24 @@
       <label>Printed expiry (YYMMDD): <input type="text" id="printed_expiry" size="8"></label>
     </fieldset>
     <fieldset>
+      <legend>Crossing context (for the SSB/BoI acceptance-policy check)</legend>
+      <label>Traveller nationality (ISO3): <input type="text" id="traveler_nationality" size="4" placeholder="IND"></label>
+      <label>Border:
+        <select id="border"><option value="">—</option><option>NEPAL</option><option>BHUTAN</option><option>INDIA</option><option>OTHER</option></select>
+      </label>
+      <label>Mode:
+        <select id="mode"><option value="">—</option><option>LAND</option><option>AIR</option></select>
+      </label>
+      <label>Age band:
+        <select id="age_band"><option value="">—</option><option>UNDER_18</option><option>ADULT</option><option>65_PLUS</option></select>
+      </label>
+    </fieldset>
+    <fieldset>
       <legend>Other</legend>
       <label>Document type:
         <select id="doc_type">
-          <option>PASSPORT</option><option>VISA</option><option>NATIONAL_ID</option>
+          <option>PASSPORT</option><option>VISA</option><option>VOTER_ID</option>
+          <option>CITIZENSHIP_CERT</option><option>AADHAAR</option><option>PAN</option>
           <option>DRIVING_LICENSE</option><option>PERMIT</option>
         </select>
       </label>
@@ -71,8 +85,11 @@
     <pre id="evidence-out"></pre>
   </details>
   <div id="decision-bar" hidden>
-    <strong>Officer decision:</strong>
+    <strong>Officer decision</strong> — you are never blocked; you may manually verify even a failed/HIGH check (the override is logged):<br>
+    <label>Officer ID: <input type="text" id="officer_id" size="12" placeholder="OFF-001"></label>
+    <label>Reason / note: <input type="text" id="decision_reason" size="40"></label><br>
     <button onclick="decide('APPROVE')">Approve</button>
+    <button onclick="decide('MANUAL_VERIFY')">Manually verify &amp; accept</button>
     <button onclick="decide('REFER')">Refer</button>
     <button onclick="decide('DENY')">Deny</button>
     <span id="decision-out"></span>
@@ -127,6 +144,10 @@ async function screen(ev) {
   fd.append('printed_doc_number', document.getElementById('printed_doc_number').value);
   fd.append('printed_expiry', document.getElementById('printed_expiry').value);
   fd.append('chip_mode', document.getElementById('chip_mode').value);
+  fd.append('border', document.getElementById('border').value);
+  fd.append('mode', document.getElementById('mode').value);
+  fd.append('traveler_nationality', document.getElementById('traveler_nationality').value);
+  fd.append('age_band', document.getElementById('age_band').value);
   const f = document.getElementById('document').files[0];
   if (f) fd.append('document', f);
   const lf = document.getElementById('live_face').files[0];
@@ -142,6 +163,9 @@ async function screen(ev) {
     'GATE:      ' + (fu.gate_fired || '(none — soft score ' + fu.soft_score + ')'),
     'RISK:      ' + fu.risk,
     'ACTION:    ' + (fu.recommended_action || ''),
+    'ACCEPTANCE:' + (e.m2_validation && e.m2_validation.document_accepted === false
+        ? ' NOT ACCEPTED — ' + e.m2_validation.acceptance_reason
+        : (e.m2_validation && e.m2_validation.document_accepted === true ? ' accepted' : ' not evaluated')),
     '',
     'NARRATIVE: ' + (e.narrative ? e.narrative.text : ''),
     '',
@@ -189,11 +213,17 @@ async function screen(ev) {
 
 async function decide(action) {
   if (!LAST_SESSION_ID) return;
-  const fd = new FormData(); fd.append('action', action);
+  const fd = new FormData();
+  fd.append('action', action);
+  fd.append('officer_id', document.getElementById('officer_id').value);
+  fd.append('reason', document.getElementById('decision_reason').value);
   const r = await fetch('/api/sessions/' + LAST_SESSION_ID + '/decision', { method: 'POST', body: fd });
   const e = await r.json();
+  const d = e.decision || {};
   document.getElementById('decision-out').textContent =
-    ' → recorded: ' + (e.decision && e.decision.officer_action) + ' at ' + (e.decision && e.decision.at);
+    ' → recorded: ' + d.officer_action + (d.manually_verified ? ' (manually verified)' : '')
+    + (d.override ? '  [OVERRIDE of system ' + (e.fusion && e.fusion.band) + ' — logged]' : '')
+    + ' at ' + d.at;
 }
 
 async function viewLedger() {

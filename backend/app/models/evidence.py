@@ -30,12 +30,18 @@ class CaptureQuality(BaseModel):
 
 
 class Context(BaseModel):
-    doc_type: str = "UNKNOWN"                    # PASSPORT | VISA | NATIONAL_ID | DRIVING_LICENSE | PERMIT | UNKNOWN
+    doc_type: str = "UNKNOWN"                    # PASSPORT | VISA | VOTER_ID | AADHAAR | PAN | DRIVING_LICENSE | ...
     doc_image_ref: Optional[str] = None          # blob ref (kept as ORIGINAL bytes)
     doc_image_sha256: Optional[str] = None        # integrity anchor for the ledger
     live_face_ref: Optional[str] = None
     chip_present: bool = False
     capture_quality: CaptureQuality = Field(default_factory=CaptureQuality)
+    # crossing context (for the acceptance-policy check)
+    border: Optional[str] = None                 # NEPAL | BHUTAN | INDIA | OTHER
+    direction: Optional[str] = None              # ENTRY | EXIT
+    traveler_nationality: Optional[str] = None   # ISO 3166 alpha-3
+    mode: Optional[str] = None                   # LAND | AIR
+    age_band: Optional[str] = None               # UNDER_18 | ADULT | 65_PLUS
 
 
 # ---------- Module 1: OCR / MRZ ----------
@@ -65,6 +71,8 @@ class M2Validation(BaseModel):
     country_code_valid: Optional[bool] = None
     date_logic_ok: Optional[bool] = None
     viz_mrz_match: dict[str, Optional[bool]] = Field(default_factory=dict)
+    document_accepted: Optional[bool] = None     # per the SSB/BoI acceptance-policy table
+    acceptance_reason: Optional[str] = None
     hard_fail: bool = False
     reasons: list[str] = Field(default_factory=list)
 
@@ -135,7 +143,11 @@ class Narrative(BaseModel):
 
 
 class Decision(BaseModel):
-    officer_action: Optional[str] = None          # APPROVE | REFER | DENY
+    officer_action: Optional[str] = None          # APPROVE | REFER | DENY | MANUAL_VERIFY
+    officer_id: Optional[str] = None
+    reason: Optional[str] = None
+    manually_verified: bool = False               # officer accepted despite failed/incomplete auto-verification
+    override: bool = False                         # officer cleared a non-LOW / gated / abstained case
     at: Optional[datetime] = None
 
 

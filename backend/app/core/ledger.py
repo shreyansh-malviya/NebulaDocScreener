@@ -93,12 +93,22 @@ class Ledger:
 
     async def append_decision(self, ev: Evidence, action: str) -> dict:
         # The officer's decision is a NEW linked record — the original verdict is never mutated.
+        # Captures the OVERRIDE (system said X, officer did Y) for the accountability trail.
+        payload = {
+            "officer_action": action,
+            "officer_id": ev.decision.officer_id,
+            "reason": ev.decision.reason,
+            "manually_verified": ev.decision.manually_verified,
+            "override": ev.decision.override,
+            "system_band": ev.fusion.band,
+            "system_gate": ev.fusion.gate_fired,
+        }
         return await self._append_core({
             "station_id": ev.station_id,
             "session_id": ev.session_id,
             "doc_image_sha256": ev.context.doc_image_sha256,
-            "evidence_digest": _sha256(_canonical({"officer_action": action})),
-            "verdict": {"officer_action": action},
+            "evidence_digest": _sha256(_canonical(payload)),
+            "verdict": payload,
             "event": "OFFICER_DECISION",
         })
 

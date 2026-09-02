@@ -45,7 +45,10 @@ class Screener:
 
     async def screen(self, inputs: ScreenInputs) -> Evidence:
         ev = Evidence(config_version=settings.CONFIG_VERSION, station_id=settings.STATION_ID)
-        ev.context = Context(doc_type=inputs.doc_type, chip_present=inputs.chip_present)
+        ev.context = Context(doc_type=inputs.doc_type, chip_present=inputs.chip_present,
+                             border=inputs.border, direction=inputs.direction,
+                             traveler_nationality=inputs.traveler_nationality,
+                             mode=inputs.mode, age_band=inputs.age_band)
 
         # store original bytes (kept untouched — the ledger anchors on their SHA-256)
         if inputs.document_bytes:
@@ -64,7 +67,7 @@ class Screener:
 
         # M2..M5 in parallel
         m2, m3, m4, m5 = await asyncio.gather(
-            _safe("m2_validation", m2_validation.run(ev.m1_ocr), M2Validation, tb["m2_validation"], timings),
+            _safe("m2_validation", m2_validation.run(ev.m1_ocr, inputs), M2Validation, tb["m2_validation"], timings),
             _safe("m3_tamper", m3_tamper.run(inputs, self.store), M3Tamper, tb["m3_tamper"], timings),
             _safe("m4_face", m4_face.run(inputs), M4Face, tb["m4_face"], timings),
             _safe("m5_chip", m5_chip.run(inputs), M5Chip, tb["m5_chip"], timings),
@@ -84,13 +87,21 @@ class Screener:
         await self.store.save_session(ev.model_dump(mode="json"))  # re-save with ledger ref
         return ev
 
-    async def decide(self, session_id: str, action: str) -> Evidence | None:
+    async def decide(self, session_id: str, action: str,
+                     officer_id: str | None = None, reason: str | None = None) -> Evidence | None:
         doc = await self.store.get_session(session_id)
         if not doc:
             return None
         ev = Evidence.model_validate(doc)
         ev.decision.officer_action = action
+        ev.decision.officer_id = officer_id
+        ev.decision.reason = reason
+        ev.decision.manually_verified = (action == "MANUAL_VERIFY")
         ev.decision.at = datetime.now(timezone.utc)
+        # OVERRIDE = the officer cleared a case the system did NOT rate clean/LOW.
+        cleared = action in ("APPROVE", "MANUAL_VERIFY")
+        non_clean = ev.fusion.band != "LOW" or bool(ev.fusion.gate_fired) or ev.fusion.abstain
+        ev.decision.override = bool(cleared and non_clean)
         await self.ledger.append_decision(ev, action)   # a NEW linked record, original untouched
         await self.store.save_session(ev.model_dump(mode="json"))
         return ev

@@ -15,3 +15,9 @@ class ScreenInputs:
     live_face_bytes: Optional[bytes] = None
     chip_present: bool = False
     chip_mode: str = "none"              # none | genuine | tampered | cloned (Module 5 demo)
+    # crossing context (acceptance policy)
+    border: Optional[str] = None         # NEPAL | BHUTAN | INDIA | OTHER
+    direction: Optional[str] = None      # ENTRY | EXIT
+    traveler_nationality: Optional[str] = None
+    mode: Optional[str] = None           # LAND | AIR
+    age_band: Optional[str] = None       # UNDER_18 | ADULT | 65_PLUS

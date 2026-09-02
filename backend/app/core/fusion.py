@@ -69,6 +69,9 @@ def fuse(ev: Evidence, cfg=settings) -> Fusion:
 
     # Expired document => at least MEDIUM (floor, not a hard HIGH).
     floor = "MEDIUM" if m2.expiry_state == "EXPIRED" else "LOW"
+    # Document not accepted for this crossing (per SSB/BoI policy) => at least MEDIUM.
+    if m2.document_accepted is False and _RANK["MEDIUM"] > _RANK[floor]:
+        floor = "MEDIUM"
 
     # ---------------- Tier 2: soft fusion over AVAILABLE signals ----------------
     w = cfg.FUSION_WEIGHTS
@@ -81,6 +84,9 @@ def fuse(ev: Evidence, cfg=settings) -> Fusion:
     if viz:
         frac_mismatch = sum(1 for v in viz.values() if v is False) / len(viz)
         parts.append(("viz_mismatch", frac_mismatch, w["viz_mismatch"]))
+
+    if m2.document_accepted is False:
+        parts.append(("not_accepted", 0.8, w["acceptance"]))
 
     if m4.similarity is not None:
         hi, lo = cfg.FACE_TAU_HI, cfg.FACE_TAU_LO

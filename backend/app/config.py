@@ -60,6 +60,7 @@ class Settings:
         "tamper": 0.40,
         "viz_mismatch": 0.20,
         "face": 0.30,
+        "acceptance": 0.25,     # document not accepted for this crossing (per SSB/BoI policy)
         "chip_absent": 0.05,
         "advisory": 0.05,
     }

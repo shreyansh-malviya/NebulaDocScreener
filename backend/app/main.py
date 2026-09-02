@@ -89,6 +89,11 @@ async def screen(
     printed_doc_number: str = Form(""),
     printed_expiry: str = Form(""),
     chip_mode: str = Form("none"),
+    border: str = Form(""),
+    direction: str = Form(""),
+    traveler_nationality: str = Form(""),
+    mode: str = Form(""),
+    age_band: str = Form(""),
     document: Optional[UploadFile] = File(None),
     live_face: Optional[UploadFile] = File(None),
 ):
@@ -111,6 +116,11 @@ async def screen(
         live_face_bytes=live_bytes,
         chip_present=(chip_mode != "none"),
         chip_mode=chip_mode,
+        border=border or None,
+        direction=direction or None,
+        traveler_nationality=traveler_nationality or None,
+        mode=mode or None,
+        age_band=age_band or None,
     )
     ev = await state["screener"].screen(inputs)
     return JSONResponse(ev.model_dump(mode="json"))
@@ -137,8 +147,9 @@ async def session(sid: str):
 
 
 @app.post("/api/sessions/{sid}/decision")
-async def decide(sid: str, action: str = Form(...)):
-    ev = await state["screener"].decide(sid, action)
+async def decide(sid: str, action: str = Form(...), officer_id: str = Form(""), reason: str = Form("")):
+    # Officer is never blocked — MANUAL_VERIFY works even on a failed/HIGH screening (IFA-2025 s.3).
+    ev = await state["screener"].decide(sid, action, officer_id or None, reason or None)
     if ev is None:
         return JSONResponse({"error": "not found"}, status_code=404)
     return ev.model_dump(mode="json")
