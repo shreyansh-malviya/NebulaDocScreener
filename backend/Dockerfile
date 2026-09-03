@@ -17,7 +17,10 @@ COPY app ./app
 # Storage auto-detects: set MONGODB_URI in the environment to persist to MongoDB Atlas
 # (survives Render free-tier spin-downs); otherwise it runs on the in-memory store.
 ENV LLM_NARRATIVE=template \
-    PYTHONUNBUFFERED=1
+    PYTHONUNBUFFERED=1 \
+    OMP_NUM_THREADS=1 \
+    OPENBLAS_NUM_THREADS=1 \
+    WEB_CONCURRENCY=1
 
 EXPOSE 8000
 # Render provides $PORT

@@ -15,7 +15,6 @@ Endpoints:
 """
 from __future__ import annotations
 
-import asyncio
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Optional
@@ -52,19 +51,8 @@ async def lifespan(app: FastAPI):
             await store.watchlist_add(entry)
     print(f"[startup] NEBULA screening API | storage backend = {store.backend} "
           f"| config = {settings.CONFIG_VERSION}")
-    # Warm the face model in the background so the first screening isn't slow (non-blocking).
-    try:
-        from .core import face as face_mod
-        if face_mod.available():
-            asyncio.create_task(asyncio.to_thread(face_mod.warm))
-    except Exception as exc:  # pragma: no cover
-        print(f"[startup] face warm-up skipped: {exc}")
-    try:
-        from .core import ocr as ocr_mod
-        if ocr_mod.available():
-            asyncio.create_task(asyncio.to_thread(ocr_mod.warm))
-    except Exception as exc:  # pragma: no cover
-        print(f"[startup] ocr warm-up skipped: {exc}")
+    # Models (OCR, face) LAZY-LOAD on first use — no startup warm — to keep idle memory low
+    # enough for small hosts (Render free tier = 512 MB). First image screening is slower.
     yield
 
 

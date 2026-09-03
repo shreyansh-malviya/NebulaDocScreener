@@ -46,7 +46,7 @@ def warm() -> bool:
         return False
 
 
-def read_mrz(image_bytes: bytes) -> dict:
+def read_mrz(image_bytes: bytes, max_side: int = 1600) -> dict:
     """Detect + read the MRZ lines from a document image.
     Returns {lines: [...], confidences: [...]} (lines top-to-bottom)."""
     try:
@@ -56,6 +56,11 @@ def read_mrz(image_bytes: bytes) -> dict:
         img = cv2.imdecode(np.frombuffer(image_bytes, np.uint8), cv2.IMREAD_COLOR)
         if img is None:
             return {"lines": [], "confidences": [], "reason": "undecodable image"}
+        # cap size to bound memory on small hosts (Render free tier = 512 MB)
+        h, w = img.shape[:2]
+        if max(h, w) > max_side:
+            s = max_side / max(h, w)
+            img = cv2.resize(img, (int(w * s), int(h * s)), interpolation=cv2.INTER_AREA)
         result, _ = _get_engine()(img)
         if not result:
             return {"lines": [], "confidences": []}

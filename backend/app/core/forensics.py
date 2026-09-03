@@ -24,9 +24,17 @@ except Exception:  # pragma: no cover
     piexif = None
 
 
-def _decode(image_bytes: bytes) -> Optional[np.ndarray]:
+def _decode(image_bytes: bytes, max_side: int = 1600) -> Optional[np.ndarray]:
     arr = np.frombuffer(image_bytes, np.uint8)
-    return cv2.imdecode(arr, cv2.IMREAD_COLOR)
+    img = cv2.imdecode(arr, cv2.IMREAD_COLOR)
+    if img is None:
+        return None
+    # cap size to bound memory on small hosts (Render free tier = 512 MB)
+    h, w = img.shape[:2]
+    if max(h, w) > max_side:
+        s = max_side / max(h, w)
+        img = cv2.resize(img, (int(w * s), int(h * s)), interpolation=cv2.INTER_AREA)
+    return img
 
 
 def _png(img: np.ndarray) -> bytes:
@@ -39,6 +47,7 @@ def ela(image_bytes: bytes, quality: int = 90) -> dict:
     """Error Level Analysis — re-save at known JPEG quality, amplify the difference.
     Weak alone (edges always light up), so weighted LOW; included for the heatmap."""
     im = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+    im.thumbnail((1600, 1600))   # cap size to bound memory
     buf = io.BytesIO()
     im.save(buf, "JPEG", quality=quality)
     buf.seek(0)

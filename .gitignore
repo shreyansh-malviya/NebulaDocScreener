@@ -40,3 +40,4 @@ Thumbs.db
 htmlcov/
 # NOTE: the rough/ (and Rough/) folder is intentionally NOT ignored here.
 # It is kept local-only via .git/info/exclude instead (never shared, never committed).
+.playwright-mcp/
