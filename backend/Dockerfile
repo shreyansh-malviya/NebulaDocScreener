@@ -20,7 +20,10 @@ ENV LLM_NARRATIVE=template \
     PYTHONUNBUFFERED=1 \
     OMP_NUM_THREADS=1 \
     OPENBLAS_NUM_THREADS=1 \
-    WEB_CONCURRENCY=1
+    WEB_CONCURRENCY=1 \
+    LITE=1
+# LITE=1 defers image OCR + tamper CV (heavy libs never load) to fit 512 MB.
+# On a >=2 GB instance, set LITE=0 in the environment to enable the full image pipeline.
 
 EXPOSE 8000
 # Render provides $PORT

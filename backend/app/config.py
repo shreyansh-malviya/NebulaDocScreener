@@ -34,6 +34,10 @@ class Settings:
     # --- audit ledger ---
     LEDGER_SECRET = os.getenv("LEDGER_SECRET", "dev-insecure-station-key-change-me")
 
+    # --- low-memory mode (e.g. Render free tier 512 MB): defer image OCR + tamper CV so the
+    #     heavy libraries (OpenCV / onnxruntime) never load. Deterministic core stays available. ---
+    LITE = os.getenv("LITE", "0").lower() in ("1", "true", "yes")
+
     # --- narrative ---
     LLM_NARRATIVE = os.getenv("LLM_NARRATIVE", "template").lower()  # template | local | api
     ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")

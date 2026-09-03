@@ -6,6 +6,7 @@ STUB path: a document *image* is accepted and stored, but image OCR (fastmrz + P
 """
 from __future__ import annotations
 
+from ..config import settings
 from ..core import mrz as mrzlib
 from ..core import mrz_correct, ocr
 from ..core.types import ScreenInputs
@@ -38,6 +39,12 @@ async def run(inputs: ScreenInputs) -> M1OCR:
 
     # ---- IMAGE: ONNX OCR (RapidOCR) -> correction pipeline -> validate ----
     if inputs.document_bytes:
+        if settings.LITE:
+            m1.status = "STUB"
+            m1.source = "image_disabled"
+            m1.notes.append("Image OCR is disabled on this low-memory host (512 MB free tier). "
+                            "Paste the MRZ text to validate now, or run locally / on a ≥2 GB instance.")
+            return m1
         if not ocr.available():
             m1.status = "STUB"
             m1.source = "image_pending"

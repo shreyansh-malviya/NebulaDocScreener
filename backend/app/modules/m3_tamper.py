@@ -7,7 +7,7 @@ is added later behind a GPU-with-CPU-fallback guard, so this module always produ
 """
 from __future__ import annotations
 
-from ..core import forensics
+from ..config import settings
 from ..core.types import ScreenInputs
 from ..models import M3Tamper, TamperSignal
 
@@ -21,6 +21,13 @@ async def run(inputs: ScreenInputs, store) -> M3Tamper:
         m3.notes.append("No document image provided; paste MRZ for the deterministic checks.")
         return m3
 
+    if settings.LITE:
+        m3.status = "STUB"
+        m3.fused_score = None
+        m3.notes.append("Tamper CV is disabled on this low-memory host (512 MB). Run locally / on a ≥2 GB instance.")
+        return m3
+
+    from ..core import forensics    # lazy import — loads OpenCV only when actually analyzing an image
     try:
         raw_signals = forensics.analyze(inputs.document_bytes)
     except Exception as exc:
