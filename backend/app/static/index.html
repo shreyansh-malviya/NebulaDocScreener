@@ -84,7 +84,8 @@
       <label>Live face capture (optional — matched against the document face):
         <input type="file" id="live_face" accept="image/*"></label>
     </fieldset>
-    <button type="submit">Run screening</button>
+    <button type="submit" id="run-btn">Run screening</button>
+    <span id="screen-status" aria-live="polite"></span>
   </form>
 
   <h3>Verdict</h3>
@@ -157,6 +158,12 @@ async function loadSample(variant) {
 
 async function screen(ev) {
   ev.preventDefault();
+  const btn = document.getElementById('run-btn');
+  const status = document.getElementById('screen-status');
+  btn.disabled = true;
+  let __secs = 0;
+  status.textContent = ' ⏳ Screening… 0s (OCR · validation · tamper · face · chip · fusion)';
+  const __t = setInterval(() => { status.textContent = ' ⏳ Screening… ' + (++__secs) + 's'; }, 1000);
   const fd = new FormData();
   fd.append('mrz_line1', document.getElementById('mrz_line1').value);
   fd.append('mrz_line2', document.getElementById('mrz_line2').value);
@@ -178,8 +185,15 @@ async function screen(ev) {
   const lf = document.getElementById('live_face').files[0];
   if (lf) fd.append('live_face', lf);
 
-  const r = await fetch('/api/screen', { method: 'POST', body: fd });
-  const e = await r.json();
+  let e;
+  try {
+    const r = await fetch('/api/screen', { method: 'POST', body: fd });
+    e = await r.json();
+  } catch (err) {
+    clearInterval(__t); btn.disabled = false;
+    status.textContent = ' ❌ error: ' + err;
+    return;
+  }
   LAST_SESSION_ID = e.session_id;
 
   const fu = e.fusion || {};
@@ -241,6 +255,8 @@ async function screen(ev) {
     img.width = 280;
     fig.appendChild(cap); fig.appendChild(img); hm.appendChild(fig);
   }
+  clearInterval(__t); btn.disabled = false;
+  status.textContent = ' ✅ done in ' + __secs + 's — band ' + (fu.band || '');
 }
 
 async function decide(action) {
