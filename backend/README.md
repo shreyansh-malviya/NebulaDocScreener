@@ -49,11 +49,10 @@ tier (512 MB, CPU):
 - `backend/Dockerfile` builds a LITE image (`requirements-deploy.txt` + `rapidocr-onnxruntime --no-deps`).
 - `render.yaml` (repo root) is a one-click blueprint (`/api/health` check, in-memory storage).
 - **Image→MRZ works** via RapidOCR (ONNX): upload a document image → M1 reads + auto-corrects + validates.
-- **Memory profile (512 MB):** the Dockerfile sets `LITE=1`, so the deterministic core (MRZ validation,
-  chip PKI, cross-doc match, acceptance policy, risk fusion, audit ledger, watchlist, oversight) runs
-  reliably (~200 MB) while **image OCR + tamper CV are deferred — their heavy libraries never load** —
-  to avoid OOM. Face (InsightFace) is also excluded from the deploy requirements (M4 abstains).
-  For the **full image pipeline**, set `LITE=0` and install `requirements.txt` + `requirements-ml.txt`
-  on a **≥2 GB** instance — or just run those (image-upload) demos locally.
+- **Memory profile (512 MB):** the Dockerfile sets `LITE=1`, which **defers the tamper-CV stage** to
+  free RAM for **OCR (runs in a memory-lean mode)**. Face (InsightFace) is excluded from the deploy
+  requirements (M4 abstains). The deterministic core (~200 MB) is always reliable. **Caveat:** 512 MB is
+  borderline for OCR — if image screening still OOMs (502), use a **≥2 GB** instance with `LITE=0`
+  (full pipeline: OCR + tamper + face), or run image-upload demos locally.
 
 Generate test images (no real documents):  `python -m tools.gen_mrz_image .`  → `mrz_valid.png`, `mrz_tampered.png`.

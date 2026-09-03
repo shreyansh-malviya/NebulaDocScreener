@@ -34,8 +34,8 @@ class Settings:
     # --- audit ledger ---
     LEDGER_SECRET = os.getenv("LEDGER_SECRET", "dev-insecure-station-key-change-me")
 
-    # --- low-memory mode (e.g. Render free tier 512 MB): defer image OCR + tamper CV so the
-    #     heavy libraries (OpenCV / onnxruntime) never load. Deterministic core stays available. ---
+    # --- low-memory mode (e.g. Render free tier 512 MB): defer the tamper-CV stage to leave RAM
+    #     headroom for OCR (which runs memory-lean). The deterministic core is unaffected. ---
     LITE = os.getenv("LITE", "0").lower() in ("1", "true", "yes")
 
     # --- narrative ---

@@ -33,7 +33,12 @@ def _get_engine():
         with _lock:
             if _engine is None:
                 from rapidocr_onnxruntime import RapidOCR
-                _engine = RapidOCR()
+                # memory-lean: single ONNX thread (pairs with OMP_NUM_THREADS=1) to hold RAM
+                # down on small hosts (Render free tier = 512 MB).
+                try:
+                    _engine = RapidOCR(intra_op_num_threads=1)
+                except Exception:
+                    _engine = RapidOCR()
     return _engine
 
 

@@ -22,8 +22,8 @@ ENV LLM_NARRATIVE=template \
     OPENBLAS_NUM_THREADS=1 \
     WEB_CONCURRENCY=1 \
     LITE=1
-# LITE=1 defers image OCR + tamper CV (heavy libs never load) to fit 512 MB.
-# On a >=2 GB instance, set LITE=0 in the environment to enable the full image pipeline.
+# LITE=1 defers the tamper-CV stage to leave RAM headroom for OCR on 512 MB (OCR still runs, lean).
+# On a >=2 GB instance, set LITE=0 to enable the full pipeline (tamper CV, and face if installed).
 
 EXPOSE 8000
 # Render provides $PORT
